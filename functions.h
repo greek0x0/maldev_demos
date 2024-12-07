@@ -99,7 +99,7 @@ NTSTATUS rockyDealloc(void* pAddress);
 NTSTATUS rockyNtClose(HANDLE handle);
 /* [CUSTOM: rockyPrintAllocated (Show Payload)]*/
 void rockyPrintAllocated(const void* pAddress, size_t size);
-/**/
+
 /* [CUSTOM rockyObfuscation and GetString (Obfuscator)] */
 string rockyGetString(int offsets[], char* big_string, int sizeof_offset);
 void rockyObfuscation(char* big_string, char* original_string);
